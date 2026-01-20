@@ -1,0 +1,253 @@
+---
+import { Icon } from "astro-icon/components";
+import { LinkPresets } from "../../constants/link-presets";
+import I18nKey from "../../i18n/i18nKey";
+import { i18n } from "../../i18n/translation";
+import type { LinkPreset, NavBarLink } from "../../types/config";
+import { url } from "../../utils/url-utils";
+import Categories from "./Categories.astro";
+
+interface Props {
+	links: NavBarLink[];
+}
+
+// 国际化标题映射
+const navTitleMap: Record<string, string> = {
+	Links: I18nKey.navLinks,
+	My: I18nKey.navMy,
+	About: I18nKey.navAbout,
+	Others: I18nKey.navOthers,
+    Categories: I18nKey.navCategories,
+	Anime: I18nKey.anime,
+	Diary: I18nKey.diary,
+	Gallery: I18nKey.albums,
+	Devices: I18nKey.devices,
+	Projects: I18nKey.projects,
+	Skills: I18nKey.skills,
+	Timeline: I18nKey.timeline,
+	Friends: I18nKey.friends,
+};
+
+// 获取国际化的标题
+const getLocalizedName = (name: string): string => {
+	const keyValue = navTitleMap[name];
+	if (keyValue) {
+        // return "a";
+		return i18n(keyValue as I18nKey);
+	}
+	return name;
+};
+
+type ProcessedNavBarLink = Omit<NavBarLink, "children"> & {
+	children?: ProcessedNavBarLink[];
+};
+
+const resolveLink = (
+	link: NavBarLink | LinkPreset,
+): ProcessedNavBarLink => {
+	const normalized =
+		typeof link === "number"
+			? (LinkPresets[link] as ProcessedNavBarLink)
+			: (link as ProcessedNavBarLink);
+	return {
+		...normalized,
+		children: normalized.children?.map(resolveLink),
+	};
+};
+
+// 处理links中的LinkPreset转换
+const processedLinks: ProcessedNavBarLink[] = Astro.props.links.map(
+	(link: NavBarLink): ProcessedNavBarLink => resolveLink(link),
+);
+---
+<div id="nav-menu-panel" class:list={["float-panel float-panel-closed absolute transition-all fixed right-4 px-2 py-2 max-h-[80vh] overflow-y-auto"]}>
+    {processedLinks.map((link) => (
+        <div class="mobile-menu-item">
+            {link.children && link.children.length > 0 ? (
+                <!-- 有子菜单的项目 -->
+                <div class="mobile-dropdown" data-mobile-dropdown>
+                    <button 
+                        class="group flex justify-between items-center py-2 pl-3 pr-1 rounded-lg gap-8 w-full text-left
+                            hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition"
+                        data-mobile-dropdown-trigger
+                        aria-expanded="false"
+                    >
+                        <div class="flex items-center transition text-black/75 dark:text-white/75 font-bold group-hover:text-[var(--primary)] group-active:text-[var(--primary)]">
+                            {link.icon && <Icon name={link.icon} class="text-[1.1rem] mr-2" />}
+                            {getLocalizedName(link.name)}
+                        </div>
+                        <Icon name="material-symbols:keyboard-arrow-down-rounded"
+                              class="transition text-[1.25rem] text-[var(--primary)] mobile-dropdown-arrow duration-200"
+                        />
+                    </button>
+                    <div class="mobile-submenu" data-mobile-submenu>
+                        {link.children.map((child) => (
+                            child.children && child.children.length > 0 ? (
+                                <div class="mobile-subdropdown" data-mobile-subdropdown>
+                                    <button
+                                        class="group flex justify-between items-center py-2 pl-6 pr-1 rounded-lg gap-8 w-full text-left
+                                            hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition"
+                                        data-mobile-subdropdown-trigger
+                                        aria-expanded="false"
+                                    >
+                                        <div class="flex items-center transition text-black/60 dark:text-white/60 font-medium group-hover:text-[var(--primary)] group-active:text-[var(--primary)]">
+                                            {child.icon && (
+                                                <Icon name={child.icon} class="text-[1.1rem] mr-2" />
+                                            )}
+                                            {getLocalizedName(child.name)}
+                                        </div>
+                                        <Icon
+                                            name="material-symbols:keyboard-arrow-down-rounded"
+                                            class="transition text-[1.25rem] text-[var(--primary)] mobile-subdropdown-arrow duration-200"
+                                        />
+                                    </button>
+                                    <div class="mobile-subsubmenu" data-mobile-subsubmenu>
+                                        {child.children.map((grand) => (
+                                            <a
+                                                href={grand.external ? grand.url : url(grand.url)}
+                                                class="group flex justify-between items-center py-2 pl-9 pr-1 rounded-lg gap-8
+                                                    hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition"
+                                                target={grand.external ? "_blank" : null}
+                                            >
+                                                <div class="flex items-center transition text-black/55 dark:text-white/55 font-medium group-hover:text-[var(--primary)] group-active:text-[var(--primary)]">
+                                                    {grand.icon && (
+                                                        <Icon name={grand.icon} class="text-[1.05rem] mr-2" />
+                                                    )}
+                                                    {getLocalizedName(grand.name)}
+                                                </div>
+                                                {grand.external && (
+                                                    <Icon
+                                                        name="fa6-solid:arrow-up-right-from-square"
+                                                        class="transition text-[0.75rem] text-black/25 dark:text-white/25 -translate-x-1"
+                                                    />
+                                                )}
+                                            </a>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <a href={child.external ? child.url : url(child.url)} 
+                                   class="group flex justify-between items-center py-2 pl-6 pr-1 rounded-lg gap-8
+                                       hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition"
+                                   target={child.external ? "_blank" : null}
+                                >
+                                    <div class="flex items-center transition text-black/60 dark:text-white/60 font-medium group-hover:text-[var(--primary)] group-active:text-[var(--primary)]">
+                                        {child.icon && <Icon name={child.icon} class="text-[1.1rem] mr-2" />}
+                                        {getLocalizedName(child.name)}
+                                    </div>
+                                    {child.external && <Icon name="fa6-solid:arrow-up-right-from-square"
+                                          class="transition text-[0.75rem] text-black/25 dark:text-white/25 -translate-x-1"
+                                    />}
+                                </a>
+                            )
+                        ))}
+                    </div>
+                </div>
+            ) : (
+                <!-- 普通链接项目 -->
+                <a href={link.external ? link.url : url(link.url)} class="group flex justify-between items-center py-2 pl-3 pr-1 rounded-lg gap-8
+                    hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)] transition
+                "
+                   target={link.external ? "_blank" : null}
+                >
+                    <div class="flex items-center transition text-black/75 dark:text-white/75 font-bold group-hover:text-[var(--primary)] group-active:text-[var(--primary)]">
+                        {link.icon && <Icon name={link.icon} class="text-[1.1rem] mr-2" />}
+                        {getLocalizedName(link.name)}
+                    </div>
+                    {!link.external && <Icon name="material-symbols:chevron-right-rounded"
+                          class="transition text-[1.25rem] text-[var(--primary)]"
+                    />}
+                    {link.external && <Icon name="fa6-solid:arrow-up-right-from-square"
+                          class="transition text-[0.75rem] text-black/25 dark:text-white/25 -translate-x-1"
+                    />}
+                </a>
+            )}
+        </div>
+    ))}
+</div>
+
+<style>
+    .mobile-submenu {
+        @apply max-h-0 overflow-hidden transition-all duration-300 ease-in-out;
+    }
+    
+    .mobile-dropdown[data-expanded="true"] .mobile-submenu {
+        @apply max-h-96;
+    }
+    
+    .mobile-dropdown[data-expanded="true"] .mobile-dropdown-arrow {
+        @apply rotate-180;
+    }
+
+    .mobile-subsubmenu {
+        @apply max-h-0 overflow-hidden transition-all duration-300 ease-in-out;
+    }
+
+    .mobile-subdropdown[data-expanded="true"] .mobile-subsubmenu {
+        @apply max-h-80;
+    }
+
+    .mobile-subdropdown[data-expanded="true"] .mobile-subdropdown-arrow {
+        @apply rotate-180;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const mobileDropdowns = document.querySelectorAll('[data-mobile-dropdown]');
+        
+        mobileDropdowns.forEach(dropdown => {
+            const trigger = dropdown.querySelector('[data-mobile-dropdown-trigger]');
+            const submenu = dropdown.querySelector('[data-mobile-submenu]');
+            
+            if (!trigger || !submenu) return;
+            
+            trigger.addEventListener('click', function(e) {
+                e.preventDefault();
+                const isExpanded = dropdown.getAttribute('data-expanded') === 'true';
+                
+                // 关闭其他打开的下拉菜单
+                mobileDropdowns.forEach(otherDropdown => {
+                    if (otherDropdown !== dropdown) {
+                        otherDropdown.setAttribute('data-expanded', 'false');
+                        const otherTrigger = otherDropdown.querySelector('[data-mobile-dropdown-trigger]');
+                        if (otherTrigger) {
+                            otherTrigger.setAttribute('aria-expanded', 'false');
+                        }
+                    }
+                });
+                
+                // 切换当前下拉菜单
+                const newState = !isExpanded;
+                dropdown.setAttribute('data-expanded', newState.toString());
+                trigger.setAttribute('aria-expanded', newState.toString());
+            });
+
+            const subDropdowns = dropdown.querySelectorAll('[data-mobile-subdropdown]');
+            subDropdowns.forEach(subDropdown => {
+                const subTrigger = subDropdown.querySelector('[data-mobile-subdropdown-trigger]');
+                const subMenu = subDropdown.querySelector('[data-mobile-subsubmenu]');
+                if (!subTrigger || !subMenu) return;
+
+                subTrigger.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const isExpanded = subDropdown.getAttribute('data-expanded') === 'true';
+
+                    subDropdowns.forEach(otherSub => {
+                        if (otherSub !== subDropdown) {
+                            otherSub.setAttribute('data-expanded', 'false');
+                            const otherTrigger = otherSub.querySelector('[data-mobile-subdropdown-trigger]');
+                            if (otherTrigger) {
+                                otherTrigger.setAttribute('aria-expanded', 'false');
+                            }
+                        }
+                    });
+
+                    const newState = !isExpanded;
+                    subDropdown.setAttribute('data-expanded', newState.toString());
+                    subTrigger.setAttribute('aria-expanded', newState.toString());
+                });
+            });
+        });
+    });
+</script>
