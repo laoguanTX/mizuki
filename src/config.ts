@@ -41,11 +41,11 @@ export const siteConfig: SiteConfig = {
 		anime: false, // 番剧页面开关
 		diary: false, // 日记页面开关
 		friends: true, // 友链页面开关
-		projects: true, // 项目页面开关
-		skills: true, // 技能页面开关
-		timeline: true, // 时间线页面开关
+		projects: false, // 项目页面开关
+		skills: false, // 技能页面开关
+		timeline: false, // 时间线页面开关
 		albums: false, // 相册页面开关
-		devices: true, // 设备页面开关
+		devices: false, // 设备页面开关
 	},
 
 	// 顶栏标题配置
@@ -338,37 +338,38 @@ export const navBarConfig: NavBarConfig = {
 				},
 			],
 		},
+		// {
+		// 	name: "About",
+		// 	url: "/content/",
+		// 	icon: "material-symbols:person",
+		// children: [
+		// {
+		// 	name: "Anime",
+		// 	url: "/anime/",
+		// 	icon: "material-symbols:movie",
+		// },
+		// {
+		// 	name: "Diary",
+		// 	url: "/diary/",
+		// 	icon: "material-symbols:book",
+		// },
+		// {
+		// 	name: "Albums",
+		// 	url: "/albums/",
+		// 	icon: "material-symbols:photo-library",
+		// },
+
+		// ],
+		// },
 		{
 			name: "About",
-			url: "/content/",
+			url: "/about/",
 			icon: "material-symbols:person",
-			children: [
-				// {
-				// 	name: "Anime",
-				// 	url: "/anime/",
-				// 	icon: "material-symbols:movie",
-				// },
-				// {
-				// 	name: "Diary",
-				// 	url: "/diary/",
-				// 	icon: "material-symbols:book",
-				// },
-				// {
-				// 	name: "Albums",
-				// 	url: "/albums/",
-				// 	icon: "material-symbols:photo-library",
-				// },
-				{
-					name: "About",
-					url: "/about/",
-					icon: "material-symbols:person",
-				},
-				{
-					name: "Friends",
-					url: "/friends/",
-					icon: "material-symbols:group",
-				},
-			],
+		},
+		{
+			name: "Friends",
+			url: "/friends/",
+			icon: "material-symbols:group",
 		},
 		// {
 		// 	name: "About",
@@ -387,34 +388,34 @@ export const navBarConfig: NavBarConfig = {
 		// 		},
 		// 	],
 		// },
-		{
-			name: "My",
-			url: "#",
-			icon: "material-symbols:more-horiz",
-			children: [
-				{
-					name: "Projects",
-					url: "/projects/",
-					icon: "material-symbols:work",
-				},
-				{
-					name: "Skills",
-					url: "/skills/",
-					icon: "material-symbols:psychology",
-				},
-				{
-					name: "Timeline",
-					url: "/timeline/",
-					icon: "material-symbols:timeline",
-				},
-				{
-					name: "Devices",
-					url: "devices/",
-					icon: "material-symbols:devices",
-					external: false,
-				},
-			],
-		},
+		// {
+		// 	name: "My",
+		// 	url: "#",
+		// 	icon: "material-symbols:more-horiz",
+		// 	children: [
+		// 		{
+		// 			name: "Projects",
+		// 			url: "/projects/",
+		// 			icon: "material-symbols:work",
+		// 		},
+		// 		{
+		// 			name: "Skills",
+		// 			url: "/skills/",
+		// 			icon: "material-symbols:psychology",
+		// 		},
+		// 		{
+		// 			name: "Timeline",
+		// 			url: "/timeline/",
+		// 			icon: "material-symbols:timeline",
+		// 		},
+		// 		{
+		// 			name: "Devices",
+		// 			url: "devices/",
+		// 			icon: "material-symbols:devices",
+		// 			external: false,
+		// 		},
+		// 	],
+		// },
 	],
 };
 
@@ -486,7 +487,7 @@ export const expressiveCodeConfig: ExpressiveCodeConfig = {
 };
 
 export const commentConfig: CommentConfig = {
-	enable: true, // 启用评论功能。当设置为 false 时，评论组件将不会显示在文章区域。
+	enable: false, // 启用评论功能。当设置为 false 时，评论组件将不会显示在文章区域。
 	twikoo: {
 		envId: "https://twikoo.vercel.app",
 		lang: SITE_LANG,
@@ -500,12 +501,12 @@ export const shareConfig: ShareConfig = {
 export const announcementConfig: AnnouncementConfig = {
 	title: "公告", // 公告标题
 	content: "欢迎来到我的博客 / 笔记本！", // 公告内容
-	closable: false, // 允许用户关闭公告
+	closable: true, // 允许用户关闭公告
 	link: {
 		enable: true, // 启用链接
-		text: "Learn More", // 链接文本
-		url: "/about/", // 链接 URL
-		external: false, // 内部链接
+		text: "前往旧站", // 链接文本
+		url: "https://www.laoguantx.top", // 链接 URL
+		external: true, // 内部链接
 	},
 };
 
@@ -514,7 +515,7 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 	mode: "meting", // 音乐播放器模式，可选 "local" 或 "meting"
 	meting_api:
 		"https://www.bilibili.uno/api?server=:server&type=:type&id=:id&auth=:auth&r=:r", // Meting API 地址
-	id: "14164869977", // 歌单ID
+	id: "316192152", // 歌单ID
 	server: "netease", // 音乐源服务器。有的meting的api源支持更多平台,一般来说,netease=网易云音乐, tencent=QQ音乐, kugou=酷狗音乐, xiami=虾米音乐, baidu=百度音乐
 	type: "playlist", // 播单类型
 };

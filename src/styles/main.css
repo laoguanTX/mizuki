@@ -28,7 +28,7 @@
 
 @font-face {
   font-family: "HarmonyOS_Sans_SC_Medium";
-  src: url("../../public/assets/font/HarmonyOS_Sans_SC_Medium.ttf") format("truetype");
+  src: url("/assets/font/HarmonyOS_Sans_SC_Medium.ttf") format("truetype");
   font-style: normal;
   font-weight: 100;
   font-display: swap;

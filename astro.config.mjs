@@ -128,7 +128,7 @@ export default defineConfig({
 			remarkMermaid,
 		],
 		rehypePlugins: [
-			rehypeKatex,
+			[rehypeKatex, { strict: "ignore", throwOnError: false }],
 			rehypeSlug,
 			rehypeWrapTable,
 			rehypeMermaid,
