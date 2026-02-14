@@ -85,7 +85,6 @@ const { remarkPluginFrontmatter } = await render(entry);
 			updated={updated}
 			tags={tags}
 			categories={category}
-			cardPageUrl={url}
 			hideTagsForMobile={true}
 			hideUpdateDate={true}
 			className="mb-4"
@@ -93,6 +92,11 @@ const { remarkPluginFrontmatter } = await render(entry);
 			words={remarkPluginFrontmatter.words}
 			showWordCount={true}
 		/>
+
+		<div class="flex items-center text-50 text-sm font-medium mb-3" data-vercount-card data-vercount-post-url={url}>
+			<Icon name="material-symbols:visibility-outline-rounded" class="text-xl mr-1" />
+			<span>{i18n(I18nKey.profileStatsPageViews)} <span data-vercount-card-value>Loading</span></span>
+		</div>
 
 		<div
 			class:list={[

@@ -1,10 +1,18 @@
 ---
 import { Icon } from "astro-icon/components";
+import { umamiConfig } from "../config";
 import I18nKey from "../i18n/i18nKey";
 import { i18n } from "../i18n/translation";
 import { formatDateToYYYYMMDD } from "../utils/date-utils";
 import { getCategoryUrl, getTagUrl } from "../utils/url-utils";
 import { normalizeCategories } from "../utils/category-utils";
+
+// 解析 umami
+const umamiEnabled = umamiConfig.enabled || false;
+const umamiWebsiteId =
+	umamiConfig.scripts.match(/data-website-id="([^"]+)"/)?.[1] || "";
+const umamiApiKey = umamiConfig.apiKey || "";
+const umamiBaseUrl = umamiConfig.baseUrl || "";
 
 export interface Props {
 	published: Date;
@@ -20,7 +28,6 @@ export interface Props {
 	words?: number; // 字数统计
 	minutes?: number; // 阅读时间（分钟）
 	showWordCount?: boolean; // 是否显示字数统计
-    cardPageUrl?: string; // 首页卡片文章链接，用于独立查询访问量
 }
 
 const {
@@ -37,7 +44,6 @@ const {
 	words,
 	// minutes,
 	showWordCount = false, // 默认不显示字数统计
-    cardPageUrl,
 } = Astro.props;
 
 const categoryList = normalizeCategories(categories);
@@ -120,99 +126,60 @@ const categoryList = normalizeCategories(categories);
             </div>
         </div>
     )}
-
-    <!-- 首页卡片访问量（与页面内信息栏同一行样式） -->
-    {cardPageUrl && (
-        <div class="flex items-center" data-vercount-card data-vercount-post-url={cardPageUrl}>
-            <div class="meta-icon">
-                <Icon name="material-symbols:visibility-outline-rounded" class="text-xl"></Icon>
-            </div>
-            <span class="text-50 text-sm font-medium">
-                {i18n(I18nKey.profileStatsPageViews)} <span data-vercount-card-value>Loading</span>
-            </span>
-        </div>
-    )}
     
-    <!-- 文章页访问量 -->
-    {!isHome && id && (
+    <!-- 访问量（首页不显示，且umami.enabled为true时显示） -->
+    {!isHome && umamiEnabled && id && (
         <div class="flex items-center">
             <div class="meta-icon">
                 <Icon name="material-symbols:visibility-outline-rounded" class="text-xl"></Icon>
             </div>
-            <span class="text-50 text-sm font-medium">
-                {i18n(I18nKey.profileStatsPageViews)} <span id="vercount_value_page_pv">Loading</span>
-            </span>
+            <span class="text-50 text-sm font-medium" id="page-views-display">统计加载中...</span>
         </div>
     )}
 </div>
 
-{!isHome && id && (
-    <script is:inline>
-        const VERCOUT_LOG_API = "https://events.vercount.one/api/v2/log";
-
-        async function updateCurrentPageVercount(usePost = false) {
-            const valueElement = document.getElementById("vercount_value_page_pv");
-            if (!valueElement) return;
-
+<!-- 只有在非首页且启用umami且有slug时才加载脚本 -->
+{!isHome && umamiEnabled && id && (
+    <script is:inline define:vars={{ id, umamiBaseUrl, umamiApiKey, umamiWebsiteId, umamiConfig }}>
+        // 客户端统计文案生成函数
+        function generateStatsText(pageViews, visitors) {
+            return `浏览量 ${pageViews} · 访客 ${visitors}`;
+        }
+        
+        // 获取访问量统计
+        async function fetchPageViews(isRetry = false) {
+            // @ts-ignore
+            if (!umamiConfig.enabled || !umamiWebsiteId || !id || !isRetry) return;
+            
             try {
-                let response;
-                if (usePost) {
-                    response = await fetch(VERCOUT_LOG_API, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({ url: window.location.href }),
-                    });
-                } else {
-                    response = await fetch(
-                        `${VERCOUT_LOG_API}?url=${encodeURIComponent(window.location.href)}`,
-                        { method: "GET" },
-                    );
+                // 构造文章页面的URL路径
+                const pageUrl = `/posts/${id}/`;
+                
+                // 调用全局工具获取特定页面的 Umami 统计数据
+                const stats = await getUmamiPageStats(umamiBaseUrl, umamiApiKey, umamiWebsiteId, pageUrl);
+                
+                // 从返回的数据中提取页面浏览量和访客数
+                const pageViews = stats.pageviews || 0;
+                const visitors = stats.visitors || 0;
+                
+                const displayElement = document.getElementById('page-views-display');
+                if (displayElement) {
+                    displayElement.textContent = generateStatsText(pageViews, visitors);
                 }
-
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const json = await response.json();
-                const payload = json?.data ?? json;
-                const pagePv = Number(payload?.page_pv ?? 0);
-                valueElement.textContent = Number.isFinite(pagePv)
-                    ? pagePv.toLocaleString()
-                    : "0";
-            } catch {
-                if (valueElement.textContent?.trim() === "Loading") {
-                    valueElement.textContent = "0";
+            } catch (error) {
+                console.error('Error fetching page views:', error);
+                const displayElement = document.getElementById('page-views-display');
+                if (displayElement) {
+                    displayElement.textContent = '统计不可用';
                 }
             }
         }
 
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", () => {
-                setTimeout(() => updateCurrentPageVercount(false), 80);
-            });
+        // 页面加载完成后获取统计数据
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', fetchPageViews);
         } else {
-            setTimeout(() => updateCurrentPageVercount(false), 80);
-        }
-
-        if (!window.__vercountSwupHookBound) {
-            window.__vercountSwupHookBound = true;
-            const bindSwupHook = () => {
-                if (window.swup) {
-                    window.swup.hooks.on("content:replace", () => {
-                        setTimeout(() => updateCurrentPageVercount(true), 80);
-                    });
-                    return true;
-                }
-                return false;
-            };
-
-            if (!bindSwupHook()) {
-                let retryCount = 0;
-                const retryTimer = setInterval(() => {
-                    if (bindSwupHook() || ++retryCount >= 10) {
-                        clearInterval(retryTimer);
-                    }
-                }, 100);
-            }
+            fetchPageViews();
         }
     </script>
 )}
