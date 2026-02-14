@@ -59,6 +59,7 @@ const initialLayoutClass = defaultLayout === "grid" ? "grid-mode" : "list-mode";
 
 			if (isClassCorrect) {
 				postListContainer.classList.add("js-initialized");
+				initPostCardVercountViews();
 				publishLayoutInit();
 				return;
 			}
@@ -70,8 +71,43 @@ const initialLayoutClass = defaultLayout === "grid" ? "grid-mode" : "list-mode";
 				postListContainer.classList.add("js-initialized");
 			}
 
+			initPostCardVercountViews();
 			publishLayoutInit();
 		});
+	}
+
+	async function fetchVercountPageViews(targetUrl: string): Promise<number | null> {
+		try {
+			const endpoint = `https://events.vercount.one/api/v2/log?url=${encodeURIComponent(targetUrl)}`;
+			const response = await fetch(endpoint, { method: "GET" });
+			if (!response.ok) return null;
+
+			const json = await response.json();
+			const payload = json?.data ?? json;
+			const pagePv = Number(payload?.page_pv ?? 0);
+			return Number.isFinite(pagePv) ? pagePv : 0;
+		} catch {
+			return null;
+		}
+	}
+
+	async function initPostCardVercountViews() {
+		const cards = document.querySelectorAll("[data-vercount-card]");
+		if (!cards.length) return;
+
+		for (const card of cards) {
+			const element = card as HTMLElement;
+			if (element.dataset.vercountLoaded === "true") continue;
+			element.dataset.vercountLoaded = "true";
+
+			const postUrl = element.dataset.vercountPostUrl;
+			const valueEl = element.querySelector("[data-vercount-card-value]");
+			if (!postUrl || !valueEl) continue;
+
+			const absoluteUrl = new URL(postUrl, window.location.origin).toString();
+			const pagePv = await fetchVercountPageViews(absoluteUrl);
+			valueEl.textContent = pagePv === null ? "0" : pagePv.toLocaleString();
+		}
 	}
 
 	function updatePostListLayout(layout: string) {

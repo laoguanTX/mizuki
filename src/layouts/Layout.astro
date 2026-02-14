@@ -340,6 +340,9 @@ if (siteConfig.font) {
 			href={`${Astro.site}rss.xml`}
 		/>
 
+		<!-- Vercount Analytics -->
+		<script defer src="https://events.vercount.one/js"></script>
+
 		<!-- Umami Analytics -->
 		{umamiEnabled && umamiScripts && <Fragment set:html={umamiScripts} />}
 	</head>

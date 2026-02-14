@@ -1,0 +1,281 @@
+---
+import { commentConfig } from "../../config";
+import { getSortedPosts } from "../../utils/content-utils";
+import { getPostUrl } from "../../utils/url-utils";
+import WidgetLayout from "./WidgetLayout.astro";
+
+interface Props {
+	class?: string;
+	style?: string;
+}
+
+const { class: className, style } = Astro.props;
+
+const twikooConfig = commentConfig.twikoo || {
+	envId: "",
+};
+
+const postList = await getSortedPosts();
+const articleTitleMap: Record<string, string> = {};
+
+function normalizePathKey(path: string): string {
+	if (!path) return "/";
+	const noHash = path.split("#")[0] || "/";
+	const noQuery = noHash.split("?")[0] || "/";
+	if (noQuery === "/") return "/";
+	return noQuery.replace(/\/+$/, "");
+}
+
+for (const post of postList) {
+	const postUrl = getPostUrl(post);
+	const key = normalizePathKey(postUrl);
+	articleTitleMap[key] = post.data.title;
+}
+---
+
+<WidgetLayout name="最新评论" id="recent-comments" class={className} style={style}>
+	<div id="recent-comments-list" class="flex flex-col gap-2 py-1">
+		<div id="recent-comments-loading" class="px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400">
+			加载中...
+		</div>
+	</div>
+</WidgetLayout>
+
+<script is:inline src="/assets/js/twikoo.all.min.js"></script>
+<script
+	is:inline
+	define:vars={{
+		twikooConfig,
+		pageSize: 5,
+		articleTitleMap,
+	}}
+>
+	function normalizeUrl(url) {
+		if (!url) return "/";
+		if (url.startsWith("http://") || url.startsWith("https://")) {
+			try {
+				const u = new URL(url);
+				return u.pathname || "/";
+			} catch {
+				return "/";
+			}
+		}
+		return url.startsWith("/") ? url : `/${url}`;
+	}
+
+	function clearList(container) {
+		while (container.firstChild) {
+			container.removeChild(container.firstChild);
+		}
+	}
+
+	function sanitizeCommentHtml(html) {
+		if (!html) return "";
+		const parser = new DOMParser();
+		const doc = parser.parseFromString(html, "text/html");
+
+		doc.querySelectorAll("script, style, iframe, object, embed").forEach((node) => {
+			node.remove();
+		});
+
+		doc.querySelectorAll("*").forEach((el) => {
+			Array.from(el.attributes).forEach((attr) => {
+				const name = attr.name.toLowerCase();
+				if (name.startsWith("on")) {
+					el.removeAttribute(attr.name);
+				}
+			});
+		});
+
+		return doc.body.innerHTML;
+	}
+
+	function getArticlePath(url) {
+		const normalized = normalizeUrl(url);
+		const withoutHash = normalized.split("#")[0] || "/";
+		if (withoutHash === "") return "/";
+		return withoutHash;
+	}
+
+	function getArticleLabel(url) {
+		const path = getArticlePath(url);
+		const normalizedPath = normalizePath(path).replace(/\/+$/, "") || "/";
+		if (articleTitleMap[normalizedPath]) {
+			return articleTitleMap[normalizedPath];
+		}
+
+		if (path === "/") return "首页";
+
+		const parts = path.split("/").filter(Boolean);
+		const last = parts[parts.length - 1] || path;
+		try {
+			return decodeURIComponent(last);
+		} catch {
+			return last;
+		}
+	}
+
+	function normalizePath(path) {
+		if (!path) return "/";
+		const clean = path.split("#")[0].split("?")[0] || "/";
+		if (clean === "/") return "/";
+		return clean.startsWith("/") ? clean : `/${clean}`;
+	}
+
+	function getAvatarUrl(item) {
+		if (item?.avatar) return item.avatar;
+		if (item?.mailMd5) return `https://cravatar.cn/avatar/${item.mailMd5}?d=mp&s=48`;
+		return "https://cravatar.cn/avatar/?d=mp&s=48";
+	}
+
+	function createEmptyState(container, text) {
+		const node = document.createElement("div");
+		node.className =
+			"px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400";
+		node.textContent = text;
+		container.appendChild(node);
+	}
+
+	function renderComments(container, comments) {
+		if (!comments || comments.length === 0) {
+			createEmptyState(container, "暂无评论");
+			return;
+		}
+
+		comments.slice(0, pageSize).forEach((item) => {
+			const link = document.createElement("a");
+			link.className =
+				"block rounded-xl px-3 py-2 transition hover:bg-[var(--btn-plain-bg-hover)]";
+			link.href = normalizeUrl(item.url);
+			link.title = item.commentText || "";
+
+			const top = document.createElement("div");
+			top.className =
+				"flex items-center justify-between gap-2 mb-1";
+
+			const nickWrap = document.createElement("div");
+			nickWrap.className = "flex items-center gap-2 min-w-0";
+
+			const avatar = document.createElement("img");
+			avatar.className = "h-5 w-5 rounded-full object-cover shrink-0";
+			avatar.src = getAvatarUrl(item);
+			avatar.alt = (item.nick || "匿名") + " 的头像";
+			avatar.loading = "lazy";
+
+			const nick = document.createElement("span");
+			nick.className =
+				"text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate";
+			nick.textContent = item.nick || "匿名";
+
+			const time = document.createElement("span");
+			time.className =
+				"text-xs text-neutral-500 dark:text-neutral-400 shrink-0";
+			time.textContent = item.relativeTime || "刚刚";
+
+			nickWrap.appendChild(avatar);
+			nickWrap.appendChild(nick);
+
+			top.appendChild(nickWrap);
+			top.appendChild(time);
+
+			const content = document.createElement("div");
+			content.className =
+				"recent-comment-content text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed";
+			content.innerHTML = sanitizeCommentHtml(item.comment || item.commentText || "");
+
+			const articleMeta = document.createElement("div");
+			articleMeta.className = "mt-2 flex items-center gap-1 text-[11px] text-neutral-500 dark:text-neutral-400";
+
+			const articlePrefix = document.createElement("span");
+			articlePrefix.textContent = "所在文章:";
+
+			const articleLink = document.createElement("a");
+			articleLink.href = normalizePath(getArticlePath(item.url));
+			articleLink.className = "underline decoration-dotted underline-offset-2 hover:text-[var(--primary)] truncate";
+			articleLink.textContent = getArticleLabel(item.url);
+			articleLink.title = normalizePath(getArticlePath(item.url));
+			articleLink.addEventListener("click", (event) => {
+				event.stopPropagation();
+			});
+
+			articleMeta.appendChild(articlePrefix);
+			articleMeta.appendChild(articleLink);
+
+			link.appendChild(top);
+			link.appendChild(content);
+			link.appendChild(articleMeta);
+			container.appendChild(link);
+		});
+	}
+
+	async function loadRecentComments() {
+		const container = document.getElementById("recent-comments-list");
+		if (!container) return;
+
+		clearList(container);
+
+		if (!twikooConfig?.envId) {
+			createEmptyState(container, "未配置 Twikoo");
+			return;
+		}
+
+		if (typeof twikoo === "undefined" || !twikoo.getRecentComments) {
+			createEmptyState(container, "Twikoo 未加载");
+			return;
+		}
+
+		try {
+			const comments = await twikoo.getRecentComments({
+				envId: twikooConfig.envId,
+				region: twikooConfig.region,
+				pageSize,
+				includeReply: false,
+			});
+
+			clearList(container);
+			renderComments(container, comments || []);
+		} catch (error) {
+			console.error("[RecentComments] 获取最新评论失败:", error);
+			createEmptyState(container, "加载失败");
+		}
+	}
+
+	function initRecentCommentsWidget() {
+		setTimeout(loadRecentComments, 100);
+	}
+
+	document.addEventListener("DOMContentLoaded", initRecentCommentsWidget);
+
+	if (window.swup && window.swup.hooks) {
+		window.swup.hooks.on("content:replace", function () {
+			setTimeout(loadRecentComments, 200);
+		});
+	}
+
+	document.addEventListener("mizuki:page:loaded", function () {
+		loadRecentComments();
+	});
+</script>
+
+<style>
+	.recent-comment-content {
+		word-break: break-word;
+		overflow-wrap: anywhere;
+	}
+
+	.recent-comment-content :global(img) {
+		display: inline-block;
+		vertical-align: middle;
+		max-width: min(100%, 12rem);
+		height: auto;
+		max-height: 2.4em;
+		object-fit: contain;
+		border-radius: 0.35rem;
+		margin: 0 0.2em;
+	}
+
+	.recent-comment-content :global(p) {
+		margin: 0;
+		display: inline;
+	}
+</style>

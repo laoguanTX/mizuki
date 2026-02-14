@@ -951,8 +951,8 @@ body.wallpaper-transparent #toc-inner-wrapper:has(table-of-contents[data-loaded=
     
     /* 主内容区域位置调整 - 确保在banner下面 */
     body.enable-banner .absolute.w-full.z-30:not(.mobile-main-no-banner) {
-        top: 70vh !important; /* 与banner高度对应 */
-        min-height: calc(100vh - 70vh) !important;
+        top: calc(70vh + 20px) !important; /* 与banner高度对应，并保留20px间距 */
+        min-height: calc(100vh - 70vh - 20px) !important;
     }
     
     /* 横幅文本覆盖层优化 */
@@ -1005,8 +1005,8 @@ body.wallpaper-transparent #toc-inner-wrapper:has(table-of-contents[data-loaded=
     
     /* 主内容区域位置调整 - 确保在banner下面 */
     body.enable-banner .absolute.w-full.z-30:not(.mobile-main-no-banner) {
-        top: 75vh !important; /* 与banner高度对应 */
-        min-height: calc(100vh - 75vh) !important;
+        top: calc(75vh + 20px) !important; /* 与banner高度对应，并保留20px间距 */
+        min-height: calc(100vh - 75vh - 20px) !important;
     }
     
     /* 横幅文本覆盖层优化 */
@@ -1058,8 +1058,8 @@ body.wallpaper-transparent #toc-inner-wrapper:has(table-of-contents[data-loaded=
     
     /* 主内容区域位置调整 - 确保在banner下面 */
     body.enable-banner .absolute.w-full.z-30:not(.mobile-main-no-banner) {
-        top: 70vh !important; /* 与banner高度对应 */
-        min-height: calc(100vh - 70vh) !important;
+        top: calc(70vh + 20px) !important; /* 与banner高度对应，并保留20px间距 */
+        min-height: calc(100vh - 70vh - 20px) !important;
     }
     
     /* 横幅文本覆盖层优化 */
@@ -1543,21 +1543,9 @@ body.wallpaper-transparent #toc-inner-wrapper:has(table-of-contents[data-loaded=
 /* 移动端水波纹特殊优化 */
 @media (max-width: 1279px) {
     #header-waves {
-        /* 确保水波纹容器不被裁剪 */
-        overflow: visible;
-        z-index: 5;
-        /* 水波纹快速消失动画 */
-        transition: transform 0.3s ease-in, opacity 0.2s ease-in;
+        display: none !important;
     }
-    
-    /* 当banner隐藏时，水波纹快速消失 */
-    .mobile-hide-banner #header-waves {
-        transform: translateY(-100%);
-        opacity: 0;
-        /* 水波纹比banner更快消失 */
-        transition: transform 0.25s ease-in, opacity 0.15s ease-in;
-    }
-    
+
     .waves svg {
         /* 移动端SVG优化 */
         min-height: 60px;

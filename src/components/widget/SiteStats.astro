@@ -97,6 +97,18 @@ const stats = [
 		dynamic: true,
 		id: "last-update",
 	},
+	{
+		icon: "material-symbols:visibility-outline-rounded",
+		label: i18n(I18nKey.profileStatsPageViews),
+		value: "Loading",
+		elementId: "vercount_value_site_pv",
+	},
+	{
+		icon: "material-symbols:person-outline-rounded",
+		label: i18n(I18nKey.profileStatsVisits),
+		value: "Loading",
+		elementId: "vercount_value_site_uv",
+	},
 ];
 ---
 
@@ -116,6 +128,7 @@ const stats = [
           <span 
             class="text-base font-bold text-neutral-900 dark:text-neutral-100"
             data-stat-id={stat.id}
+						id={stat.elementId}
           >
             {stat.formatted ? formatNumber(stat.value) : stat.value}
           </span>
